@@ -27,6 +27,9 @@ func main() {
    // v
    var verbose bool
    flag.BoolVar(&verbose, "v", false, "verbose")
+   // o
+   var output string
+   flag.StringVar(&output, "o", "", "output")
    flag.Parse()
    if verbose {
       instagram.LogLevel = 1
@@ -41,12 +44,12 @@ func main() {
          shortcode = instagram.Shortcode(address)
       }
       if auth {
-         err := doItems(shortcode, info)
+         err := doItems(shortcode, info, output)
          if err != nil {
             panic(err)
          }
       } else {
-         err := doGraph(shortcode, info)
+         err := doGraph(shortcode, info, output)
          if err != nil {
             panic(err)
          }

@@ -10,6 +10,7 @@ import (
    "strconv"
    "strings"
    "time"
+   "context"
 )
 
 func (i Item) Format() (string, error) {
@@ -120,11 +121,21 @@ func (l Login) Create(name string) error {
 }
 
 func (l Login) Items(shortcode string) ([]Item, error) {
+   r := &Retry{
+      nums:      10,
+      transport: http.DefaultTransport,
+   }
+
+   c := &http.Client{Transport: r}
+   // each request will be timeout in 1 second
+   ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+   defer cancel()
+   
    var buf strings.Builder
    buf.WriteString("https://www.instagram.com/p/")
    buf.WriteString(shortcode)
    buf.WriteByte('/')
-   req, err := http.NewRequest("GET", buf.String(), nil)
+   req, err := http.NewRequestWithContext(ctx, "GET", buf.String(), nil)
    if err != nil {
       return nil, err
    }
@@ -134,7 +145,7 @@ func (l Login) Items(shortcode string) ([]Item, error) {
    }
    req.URL.RawQuery = "__a=1"
    LogLevel.Dump(req)
-   res, err := new(http.Transport).RoundTrip(req)
+   res, err := c.Do(req)
    if err != nil {
       return nil, err
    }

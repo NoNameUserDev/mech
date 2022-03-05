@@ -10,7 +10,7 @@ import (
    "time"
 )
 
-func doGraph(shortcode string, info bool) error {
+func doGraph(shortcode string, info bool, output string) error {
    media, err := instagram.NewGraphMedia(shortcode)
    if err != nil {
       return err
@@ -19,7 +19,7 @@ func doGraph(shortcode string, info bool) error {
       fmt.Println(media)
    } else {
       for _, addr := range media.URLs() {
-         err := download(addr)
+         err := download(addr, output)
          if err != nil {
             return err
          }
@@ -29,7 +29,7 @@ func doGraph(shortcode string, info bool) error {
    return nil
 }
 
-func doItems(shortcode string, info bool) error {
+func doItems(shortcode string, info bool, output string) error {
    cache, err := os.UserCacheDir()
    if err != nil {
       return err
@@ -56,7 +56,7 @@ func doItems(shortcode string, info bool) error {
                return err
             }
             for _, addr := range addrs {
-               err := download(addr)
+               err := download(addr, output)
                if err != nil {
                   return err
                }
@@ -84,7 +84,7 @@ func saveLogin(username, password string) error {
    return login.Create(cache)
 }
 
-func download(address string) error {
+func download(address string, output string) error {
    fmt.Println("GET", address)
    res, err := http.Get(address)
    if err != nil {
@@ -95,7 +95,8 @@ func download(address string) error {
    if err != nil {
       return err
    }
-   file, err := os.Create(filepath.Base(addr.Path))
+   output = filepath.Join(output, filepath.Base(addr.Path))
+   file, err := os.Create(output)
    if err != nil {
       return err
    }

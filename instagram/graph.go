@@ -6,6 +6,8 @@ import (
    "net/http"
    "strconv"
    "strings"
+   "context"
+   "time"
 )
 
 var LogLevel format.LogLevel
@@ -23,18 +25,28 @@ func Shortcode(address string) string {
 
 // Anonymous request
 func NewGraphMedia(shortcode string) (*GraphMedia, error) {
+   r := &Retry{
+		nums:      10,
+		transport: http.DefaultTransport,
+	}
+
+	c := &http.Client{Transport: r}
+	// each request will be timeout in 1 second
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+   
    var buf strings.Builder
    buf.WriteString("https://www.instagram.com/p/")
    buf.WriteString(shortcode)
    buf.WriteByte('/')
-   req, err := http.NewRequest("GET", buf.String(), nil)
+   req, err := http.NewRequestWithContext(ctx, "GET", buf.String(), nil)
    if err != nil {
       return nil, err
    }
    req.Header.Set("User-Agent", Android.String())
    req.URL.RawQuery = "__a=1"
    LogLevel.Dump(req)
-   res, err := new(http.Transport).RoundTrip(req)
+   res, err := c.Do(req)
    if err != nil {
       return nil, err
    }
